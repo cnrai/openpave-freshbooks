@@ -1,0 +1,7 @@
+tmp/
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+.pave-session.json

@@ -1,0 +1,247 @@
+# OpenPAVE FreshBooks Skill
+# Manage invoices, clients, expenses, and accounting via FreshBooks API
+
+name: freshbooks
+version: 1.0.0
+description: Manage FreshBooks invoices, clients, expenses, payments, projects, and time tracking
+
+author:
+  name: cnrai
+  url: https://github.com/cnrai
+
+license: MIT
+homepage: https://github.com/cnrai/openpave-freshbooks
+repository: cnrai/openpave-freshbooks
+
+# Execution pattern
+pattern: sandbox
+entrypoint: index.js
+
+# Available commands
+commands:
+  - name: me
+    description: Get current user and account info
+    options:
+      - --json
+      - --summary
+    examples:
+      - 'me --summary'
+
+  - name: clients
+    description: List clients
+    options:
+      - -n, --count <number>
+      - -p, --page <number>
+      - -s, --search <query>
+      - --json
+      - --summary
+    examples:
+      - 'clients --summary'
+      - 'clients --search "acme" --summary'
+
+  - name: client
+    description: Get details of a specific client
+    args:
+      - <clientId>
+    options:
+      - --json
+      - --summary
+    examples:
+      - 'client 12345 --summary'
+
+  - name: invoices
+    description: List invoices
+    options:
+      - -n, --count <number>
+      - -p, --page <number>
+      - -s, --status <status>
+      - -c, --client <clientId>
+      - --from <date>
+      - --to <date>
+      - --json
+      - --summary
+    examples:
+      - 'invoices --summary'
+      - 'invoices --status paid --summary'
+      - 'invoices --from 2025-01-01 --to 2025-12-31 --summary'
+
+  - name: invoice
+    description: Get details of a specific invoice
+    args:
+      - <invoiceId>
+    options:
+      - --json
+      - --summary
+    examples:
+      - 'invoice 12345 --summary'
+
+  - name: expenses
+    description: List expenses
+    options:
+      - -n, --count <number>
+      - -p, --page <number>
+      - --from <date>
+      - --to <date>
+      - --category <categoryId>
+      - --json
+      - --summary
+    examples:
+      - 'expenses --summary'
+      - 'expenses --from 2025-01-01 --summary'
+
+  - name: expense
+    description: Get details of a specific expense
+    args:
+      - <expenseId>
+    options:
+      - --json
+      - --summary
+    examples:
+      - 'expense 12345 --summary'
+
+  - name: payments
+    description: List payments
+    options:
+      - -n, --count <number>
+      - -p, --page <number>
+      - -i, --invoice <invoiceId>
+      - --json
+      - --summary
+    examples:
+      - 'payments --summary'
+      - 'payments --invoice 12345 --summary'
+
+  - name: categories
+    description: List expense categories
+    options:
+      - --json
+      - --summary
+    examples:
+      - 'categories --summary'
+
+  - name: projects
+    description: List projects
+    options:
+      - -n, --count <number>
+      - -p, --page <number>
+      - --json
+      - --summary
+    examples:
+      - 'projects --summary'
+
+  - name: time
+    description: List time entries
+    options:
+      - -n, --count <number>
+      - -p, --page <number>
+      - --project <projectId>
+      - --from <date>
+      - --to <date>
+      - --json
+      - --summary
+    examples:
+      - 'time --summary'
+      - 'time --project 123 --from 2025-01-01 --summary'
+
+  - name: report
+    description: Get profit/loss report
+    options:
+      - --from <date>
+      - --to <date>
+      - --json
+      - --summary
+    examples:
+      - 'report --from 2025-01-01 --to 2025-12-31 --summary'
+
+  - name: create-client
+    description: Create a new client
+    options:
+      - --email <email>
+      - --fname <name>
+      - --lname <name>
+      - --org <organization>
+      - --phone <phone>
+    examples:
+      - 'create-client --email "client@example.com" --org "Acme Inc"'
+
+  - name: create-invoice
+    description: Create a new invoice
+    options:
+      - -c, --client <clientId>
+      - --due <days>
+      - --notes <notes>
+    examples:
+      - 'create-invoice --client 12345 --due 30'
+
+  - name: send-invoice
+    description: Send an invoice by email
+    args:
+      - <invoiceId>
+    options:
+      - --to <emails>
+      - --subject <subject>
+      - --body <body>
+    examples:
+      - 'send-invoice 12345'
+      - 'send-invoice 12345 --to "client@example.com"'
+
+# Token configuration for secure sandbox access
+tokens:
+  freshbooks:
+    type: oauth
+    description: FreshBooks OAuth token for API access
+    domains:
+      - api.freshbooks.com
+    env:
+      required:
+        - FRESHBOOKS_REFRESH_TOKEN
+        - FRESHBOOKS_CLIENT_ID
+        - FRESHBOOKS_CLIENT_SECRET
+    config:
+      env: FRESHBOOKS_ACCESS_TOKEN
+      type: oauth
+      domains:
+        - api.freshbooks.com
+      placement:
+        type: header
+        name: Authorization
+        format: "Bearer {token}"
+      refreshEnv: FRESHBOOKS_REFRESH_TOKEN
+      refreshUrl: https://api.freshbooks.com/auth/oauth/token
+      clientIdEnv: FRESHBOOKS_CLIENT_ID
+      clientSecretEnv: FRESHBOOKS_CLIENT_SECRET
+
+# Sandbox permissions
+permissions:
+  fs.read: []
+  fs.write: []
+  network:
+    - api.freshbooks.com
+  modules:
+    - fs
+    - path
+  system: []
+
+# Platform compatibility
+platforms:
+  - darwin
+  - linux
+  - win32
+
+engines:
+  node: ">=16.0.0"
+
+# Metadata
+keywords:
+  - freshbooks
+  - accounting
+  - invoices
+  - expenses
+  - clients
+  - payments
+  - time-tracking
+  - projects
+  - billing
+
+category: accounting
+icon: "\U0001F4B0"
