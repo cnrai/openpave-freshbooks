@@ -2,7 +2,7 @@
 # Manage invoices, clients, expenses, and accounting via FreshBooks API
 
 name: freshbooks
-version: 1.0.0
+version: 1.1.0
 description: Manage FreshBooks invoices, clients, expenses, payments, projects, and time tracking
 
 author:
@@ -197,6 +197,11 @@ tokens:
         - FRESHBOOKS_REFRESH_TOKEN
         - FRESHBOOKS_CLIENT_ID
         - FRESHBOOKS_CLIENT_SECRET
+    # OAuth authorization flow configuration (for web UI authentication)
+    oauth:
+      provider: freshbooks
+      authorizeUrl: https://auth.freshbooks.com/oauth/authorize
+      # FreshBooks doesn't use scopes - permissions are set at app level
     config:
       env: FRESHBOOKS_ACCESS_TOKEN
       type: oauth
@@ -243,5 +248,5 @@ keywords:
   - projects
   - billing
 
-category: accounting
+category: productivity
 icon: "\U0001F4B0"
