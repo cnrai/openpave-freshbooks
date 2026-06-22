@@ -2,7 +2,7 @@
 # Manage invoices, clients, expenses, and accounting via FreshBooks API
 
 name: freshbooks
-version: 1.1.0
+version: 1.2.0
 description: Manage FreshBooks invoices, clients, expenses, payments, projects, and time tracking
 
 author:
@@ -22,7 +22,6 @@ commands:
   - name: me
     description: Get current user and account info
     options:
-      - --json
       - --summary
     examples:
       - 'me --summary'
@@ -33,7 +32,6 @@ commands:
       - -n, --count <number>
       - -p, --page <number>
       - -s, --search <query>
-      - --json
       - --summary
     examples:
       - 'clients --summary'
@@ -44,7 +42,6 @@ commands:
     args:
       - <clientId>
     options:
-      - --json
       - --summary
     examples:
       - 'client 12345 --summary'
@@ -58,7 +55,6 @@ commands:
       - -c, --client <clientId>
       - --from <date>
       - --to <date>
-      - --json
       - --summary
     examples:
       - 'invoices --summary'
@@ -70,7 +66,6 @@ commands:
     args:
       - <invoiceId>
     options:
-      - --json
       - --summary
     examples:
       - 'invoice 12345 --summary'
@@ -83,7 +78,6 @@ commands:
       - --from <date>
       - --to <date>
       - --category <categoryId>
-      - --json
       - --summary
     examples:
       - 'expenses --summary'
@@ -94,7 +88,6 @@ commands:
     args:
       - <expenseId>
     options:
-      - --json
       - --summary
     examples:
       - 'expense 12345 --summary'
@@ -105,7 +98,6 @@ commands:
       - -n, --count <number>
       - -p, --page <number>
       - -i, --invoice <invoiceId>
-      - --json
       - --summary
     examples:
       - 'payments --summary'
@@ -114,7 +106,6 @@ commands:
   - name: categories
     description: List expense categories
     options:
-      - --json
       - --summary
     examples:
       - 'categories --summary'
@@ -124,7 +115,6 @@ commands:
     options:
       - -n, --count <number>
       - -p, --page <number>
-      - --json
       - --summary
     examples:
       - 'projects --summary'
@@ -137,7 +127,6 @@ commands:
       - --project <projectId>
       - --from <date>
       - --to <date>
-      - --json
       - --summary
     examples:
       - 'time --summary'
@@ -148,7 +137,6 @@ commands:
     options:
       - --from <date>
       - --to <date>
-      - --json
       - --summary
     examples:
       - 'report --from 2025-01-01 --to 2025-12-31 --summary'

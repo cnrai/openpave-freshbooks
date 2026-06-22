@@ -104,10 +104,98 @@ function formatDate(dateStr) {
 }
 
 // FreshBooks Client Class - Uses secure token system
+
+// ── PAVE Auth Proxy (replaces deprecated authenticatedFetch global) ──
+// Direct HTTP calls to the PAVE auth proxy at /proxy/:tokenName/*path
+var PAVE_PROXY_BASE = process.env.PAVE_PROXY_URL || '';
+
+function _shellQuote(s) {
+  return "'" + String(s).replace(/'/g, "'\\''") + "'";
+}
+
+function proxyHasToken(tokenName) {
+  if (!PAVE_PROXY_BASE) return false;
+  try {
+    var url = PAVE_PROXY_BASE.replace(/\/$/, '') + '/_tokens/' + encodeURIComponent(tokenName);
+    var out = require('child_process').execSync(
+      'curl -sS --max-time 5 ' + _shellQuote(url),
+      { encoding: 'utf8', timeout: 8000, stdio: ['pipe', 'pipe', 'pipe'] }
+    );
+    var r = JSON.parse(out);
+    return r.has === true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function proxyFetch(tokenName, url, options) {
+  options = options || {};
+  if (!PAVE_PROXY_BASE) {
+    throw new Error('PAVE_PROXY_URL not set - cannot reach auth proxy');
+  }
+
+  var parsed = new URL(url);
+  var proxyUrl = PAVE_PROXY_BASE.replace(/\/$/, '') + '/' + encodeURIComponent(tokenName) + parsed.pathname + parsed.search;
+  proxyUrl += (proxyUrl.indexOf('?') !== -1 ? '&' : '?') + '_mode=json';
+  if (options.saveTo) {
+    proxyUrl += '&_saveTo=' + encodeURIComponent(options.saveTo);
+  }
+
+  var method = options.method || 'GET';
+  var timeout = options.timeout || 30000;
+  var cmd = 'curl -sS -X ' + method + ' --max-time ' + Math.ceil(timeout / 1000);
+
+  var headers = Object.assign({}, options.headers || {});
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+  for (var k in headers) {
+    cmd += ' -H ' + _shellQuote(k + ': ' + headers[k]);
+  }
+
+  if (options.body) {
+    var bodyStr = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+    cmd += ' -d ' + _shellQuote(bodyStr);
+  }
+
+  cmd += ' ' + _shellQuote(proxyUrl);
+
+  var out;
+  try {
+    out = require('child_process').execSync(cmd, {
+      encoding: 'utf8', timeout: timeout + 5000, maxBuffer: 10 * 1024 * 1024,
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+  } catch (err) {
+    var stdout = err.stdout ? err.stdout.toString() : '';
+    var stderr = err.stderr ? err.stderr.toString() : '';
+    if (stdout) { out = stdout; } else {
+      throw new Error('Proxy request failed: ' + (stderr.trim() || err.message));
+    }
+  }
+
+  var resp;
+  try { resp = JSON.parse(out); } catch (e) {
+    return { ok: true, status: 200, headers: { get: function() { return null; } },
+      text: function() { return out; }, json: function() { return JSON.parse(out || '{}'); } };
+  }
+  if (resp.error) throw new Error(resp.error);
+  if (resp.savedTo) {
+    return { ok: resp.ok || false, status: resp.status || 200, savedTo: resp.savedTo,
+      headers: { get: function() { return null; } },
+      text: function() { return ''; }, json: function() { return {}; } };
+  }
+  return { ok: resp.ok || false, status: resp.status || 200,
+    headers: { get: function(name) { var hs = resp.headers || {}, ln = name.toLowerCase();
+      for (var key in hs) { if (key.toLowerCase() === ln) return Array.isArray(hs[key]) ? hs[key][0] : hs[key]; }
+      return null; } },
+    text: function() { return resp.body || ''; }, json: function() { return JSON.parse(resp.body || '{}'); } };
+}
+
 class FreshBooksClient {
   constructor() {
     // Check if freshbooks token is available via secure token system
-    if (typeof hasToken === 'function' && !hasToken('freshbooks')) {
+    if (!proxyHasToken('freshbooks')) {
       console.error('FreshBooks token not configured.');
       console.error('');
       console.error('Add to ~/.pave/permissions.yaml under tokens section:');
@@ -158,7 +246,7 @@ class FreshBooksClient {
       fetchOptions.body = options.body;
     }
     
-    var response = authenticatedFetch('freshbooks', url, fetchOptions);
+    var response = proxyFetch('freshbooks', url, fetchOptions);
     
     if (!response.ok) {
       var error;
@@ -471,7 +559,7 @@ function main() {
             }
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -497,7 +585,7 @@ function main() {
             console.log('');
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -523,7 +611,7 @@ function main() {
           }
           console.log('Currency: ' + (c.currency_code || 'USD'));
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -561,7 +649,7 @@ function main() {
             console.log('');
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -600,7 +688,7 @@ function main() {
             }
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -632,7 +720,7 @@ function main() {
             console.log('');
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -660,7 +748,7 @@ function main() {
           if (exp.notes) console.log('Notes: ' + exp.notes);
           console.log('ID: ' + exp.id);
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -686,7 +774,7 @@ function main() {
             console.log('');
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -702,7 +790,7 @@ function main() {
             console.log(cat.category + ' (ID: ' + cat.id + ')');
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -725,7 +813,7 @@ function main() {
             console.log('');
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -752,7 +840,7 @@ function main() {
             console.log('');
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -786,7 +874,7 @@ function main() {
             console.log('No report data available');
           }
         } else {
-          console.log(JSON.stringify(data, null, 2));
+          console.log(JSON.stringify(data));
         }
         break;
       }
@@ -810,7 +898,7 @@ function main() {
         var data = client.createClient(clientData);
         console.log('Client created successfully!');
         var result = (data.response && data.response.result && data.response.result.client) || data;
-        console.log(JSON.stringify(result, null, 2));
+        console.log(JSON.stringify(result));
         break;
       }
       
@@ -833,7 +921,7 @@ function main() {
         var data = client.createInvoice(invoiceData);
         console.log('Invoice created successfully!');
         var result = (data.response && data.response.result && data.response.result.invoice) || data;
-        console.log(JSON.stringify(result, null, 2));
+        console.log(JSON.stringify(result));
         break;
       }
       
@@ -873,7 +961,7 @@ function main() {
         error: error.message,
         status: error.status,
         data: error.data
-      }, null, 2));
+      }));
     }
     process.exit(1);
   }
